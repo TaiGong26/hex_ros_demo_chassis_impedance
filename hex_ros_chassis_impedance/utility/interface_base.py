@@ -10,8 +10,8 @@ from collections import deque
 from typing import Any, Optional
 from abc import ABC, abstractmethod
 
-from hex_util_msg.dataclass.dataclass_robo import HexDcRoboManipCtrl
-from hex_util_msg.dataclass.dataclass_robo import HexDcRoboManipStateStamped
+from hex_util_msg.dataclass.dataclass_robo import HexDcRoboChsCtrl
+from hex_util_msg.dataclass.dataclass_robo import HexDcRoboChsStateStamped
 from hex_util_msg.dataclass.dataclass_teleop import HexDcTeleopKeyboardState
 
 
@@ -20,11 +20,11 @@ class InterfaceBase(ABC):
     def __init__(self, name: str = "unknown"):
         ### ros parameters
         self._rate_param = {}
-        self._model_param = {}
-        self._comp_param = {}
+        self._impedance_param = {}
+        self._chs_param = {}
 
         ### rx msg queues
-        self._manip_state_deque = deque(maxlen=100)
+        self._chs_state_deque = deque(maxlen=100)
         self._keyboard_deque = deque(maxlen=100)
 
         ### name
@@ -78,18 +78,18 @@ class InterfaceBase(ABC):
     def get_rate_param(self) -> dict:
         return self._rate_param
 
-    def get_model_param(self) -> dict:
-        return self._model_param
+    def get_impedance_param(self) -> dict:
+        return self._impedance_param
 
-    def get_comp_param(self) -> dict:
-        return self._comp_param
+    def get_chs_param(self) -> dict:
+        return self._chs_param
 
     ####################
     ### publishers
     ####################
     @abstractmethod
-    def pub_manip_ctrl(self, out: HexDcRoboManipCtrl):
-        raise NotImplementedError("InterfaceBase.pub_manip_ctrl")
+    def pub_chs_ctrl(self, out: HexDcRoboChsCtrl):
+        raise NotImplementedError("InterfaceBase.pub_chs_ctrl")
 
     ####################
     ### subscribers
@@ -109,12 +109,12 @@ class InterfaceBase(ABC):
             else:
                 return None
 
-    # manip state
-    def get_manip_state(
+    # chassis state
+    def get_chs_state(
         self,
         latest: bool = False,
-    ) -> Optional[HexDcRoboManipStateStamped]:
-        return self.deque_helper(self._manip_state_deque, latest)
+    ) -> Optional[HexDcRoboChsStateStamped]:
+        return self.deque_helper(self._chs_state_deque, latest)
 
     # keyboard state
     def get_keyboard_state(

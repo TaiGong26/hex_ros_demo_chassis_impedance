@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
 from glob import glob
 
-package_name = 'hex_ros_arm_comp'
+package_name = 'hex_ros_chassis_impedance'
 
 
 def get_files(tar: str, src: str):
@@ -34,11 +34,11 @@ setup(
     zip_safe=True,
     maintainer='Dong Zhaorui',
     maintainer_email='dzr159@gmail.com',
-    description='Gravity compensation demo for the Archer Y6 arm',
+    description='Impedance control demo for the Maver X4 chassis',
     license='Apache-2.0',
     entry_points={
         'console_scripts': [
-            'arm_comp = hex_ros_arm_comp.arm_comp:main',
+            'chassis_impedance = hex_ros_chassis_impedance.chassis_impedance:main',
         ],
     },
 )

@@ -12,14 +12,12 @@ import numpy as np
 import rclpy
 import rclpy.node
 
-from geometry_msgs.msg import Point, Pose, Quaternion, Vector3
+from geometry_msgs.msg import Twist, Vector3
 from hex_ros_msgs.msg import (
     HexRosJnt,
-    HexRosRoboArmCtrl,
-    HexRosRoboGripCtrl,
-    HexRosRoboManipCtrl,
-    HexRosRoboManipCtrlStamped,
-    HexRosRoboManipStateStamped,
+    HexRosRoboChsCtrl,
+    HexRosRoboChsCtrlStamped,
+    HexRosRoboChsStateStamped,
     HexRosTeleopKeyboardStateStamped,
 )
 
@@ -29,22 +27,23 @@ from hex_util_msg.dataclass.dataclass_base import (
     HexDcBaseVector3,
     HexDcBaseQuaternion,
     HexDcBasePose,
+    HexDcBaseTwist,
+    HexDcBaseOdometry,
     HexDcBaseJntState,
 )
 from hex_util_msg.dataclass.dataclass_robo import (
-    HexDcRoboArmCtrl,
-    HexDcRoboArmState,
-    HexDcRoboGripCtrl,
-    HexDcRoboGripState,
-    HexDcRoboManipCtrl,
-    HexDcRoboManipState,
-    HexDcRoboManipStateStamped,
+    HexDcRoboChsCtrl,
+    HexDcRoboChsState,
+    HexDcRoboChsStateStamped,
 )
 from hex_util_msg.dataclass.dataclass_teleop import HexDcTeleopKeyboardState
 
 from .interface_base import InterfaceBase
 
 _LETTERS = [chr(c) for c in range(ord('a'), ord('z') + 1)]
+
+_CHS_DOF = 8
+_ZERO8 = [0.0] * _CHS_DOF
 
 
 class DataInterface(InterfaceBase):
@@ -62,69 +61,52 @@ class DataInterface(InterfaceBase):
 
         ### parameters
         self.__node.declare_parameter('rate_teleop', 100.0)
-        self.__node.declare_parameter('model_urdf', "")
-        self.__node.declare_parameter('model_frame_id', "base_link")
-        self.__node.declare_parameter(
-            'pose_end_in_flange',
-            [0.187, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-        )
-        self.__node.declare_parameter('gravity', [0.0, 0.0, -9.81])
-        self.__node.declare_parameter('arm_stable_pos',
-                                      [0.0, -1.5, 3.0, 0.07, 0.0, 0.0])
-        self.__node.declare_parameter('grip_stable_pos', [0.5])
-        self.__node.declare_parameter('arm_kp',
-                                      [200.0, 200.0, 250.0, 150.0, 100.0, 100.0])
-        self.__node.declare_parameter('arm_kd', [5.0, 5.0, 5.0, 5.0, 2.0, 2.0])
-        self.__node.declare_parameter('grip_kp', [10.0])
-        self.__node.declare_parameter('grip_kd', [0.5])
-        self.__node.declare_parameter('arrive_threshold', 0.06)
-        self.__node.declare_parameter('extra_mass', 0.1)
+        self.__node.declare_parameter('chs_impedance_kp', [2.0, 2.0, 2.0])
+        self.__node.declare_parameter('chs_impedance_kd', [1.0, 1.0, 1.0])
+        self.__node.declare_parameter('chs_pos_threshold', 0.2)
+        self.__node.declare_parameter('chs_yaw_threshold', 0.2)
+        self.__node.declare_parameter('chs_bias', 0.02)
+        self.__node.declare_parameter('chs_wheel_radius', 0.0625)
+        self.__node.declare_parameter('chs_track_width', 0.28)
+        self.__node.declare_parameter('chs_wheel_base', 0.424)
 
         self._rate_param.update({
             "teleop":
             self.__node.get_parameter('rate_teleop').value,
         })
-        self._model_param = {
-            "urdf":
-            self.__node.get_parameter('model_urdf').value,
-            "frame_id":
-            self.__node.get_parameter('model_frame_id').value,
-            "pose_end_in_flange":
-            list(self.__node.get_parameter('pose_end_in_flange').value),
+        self._impedance_param = {
+            "chs_impedance_kp":
+            list(self.__node.get_parameter('chs_impedance_kp').value),
+            "chs_impedance_kd":
+            list(self.__node.get_parameter('chs_impedance_kd').value),
+            "chs_pos_threshold":
+            self.__node.get_parameter('chs_pos_threshold').value,
+            "chs_yaw_threshold":
+            self.__node.get_parameter('chs_yaw_threshold').value,
         }
-        self._comp_param = {
-            "gravity":
-            list(self.__node.get_parameter('gravity').value),
-            "arm_stable_pos":
-            list(self.__node.get_parameter('arm_stable_pos').value),
-            "grip_stable_pos":
-            list(self.__node.get_parameter('grip_stable_pos').value),
-            "arm_kp":
-            list(self.__node.get_parameter('arm_kp').value),
-            "arm_kd":
-            list(self.__node.get_parameter('arm_kd').value),
-            "grip_kp":
-            list(self.__node.get_parameter('grip_kp').value),
-            "grip_kd":
-            list(self.__node.get_parameter('grip_kd').value),
-            "arrive_threshold":
-            self.__node.get_parameter('arrive_threshold').value,
-            "extra_mass":
-            self.__node.get_parameter('extra_mass').value,
+        self._chs_param = {
+            "bias":
+            float(self.__node.get_parameter('chs_bias').value),
+            "wheel_radius":
+            float(self.__node.get_parameter('chs_wheel_radius').value),
+            "track_width":
+            float(self.__node.get_parameter('chs_track_width').value),
+            "wheel_base":
+            float(self.__node.get_parameter('chs_wheel_base').value),
         }
 
         ### publisher
-        self.__manip_ctrl_pub = self.__node.create_publisher(
-            HexRosRoboManipCtrlStamped,
-            'manip_ctrl',
+        self.__chs_ctrl_pub = self.__node.create_publisher(
+            HexRosRoboChsCtrlStamped,
+            'chs_ctrl',
             10,
         )
 
         ### subscriber
-        self.__manip_state_sub = self.__node.create_subscription(
-            HexRosRoboManipStateStamped,
-            'manip_state',
-            self.__manip_state_callback,
+        self.__chs_state_sub = self.__node.create_subscription(
+            HexRosRoboChsStateStamped,
+            'chs_state',
+            self.__chs_state_callback,
             10,
         )
         self.__keyboard_sub = self.__node.create_subscription(
@@ -133,7 +115,7 @@ class DataInterface(InterfaceBase):
             self.__keyboard_callback,
             10,
         )
-        self.__manip_state_sub
+        self.__chs_state_sub
         self.__keyboard_sub
 
         ### spin thread
@@ -191,14 +173,11 @@ class DataInterface(InterfaceBase):
     ####################
     ### publishers
     ####################
-    def pub_manip_ctrl(self, out: HexDcRoboManipCtrl):
-        msg = HexRosRoboManipCtrlStamped()
+    def pub_chs_ctrl(self, out: HexDcRoboChsCtrl):
+        msg = HexRosRoboChsCtrlStamped()
         msg.header.stamp = self.__node.get_clock().now().to_msg()
-        msg.manip_ctrl = HexRosRoboManipCtrl(
-            arm_ctrl=self.__arm_ctrl_to_msg(out.arm_ctrl),
-            grip_ctrl=self.__grip_ctrl_to_msg(out.grip_ctrl),
-        )
-        self.__manip_ctrl_pub.publish(msg)
+        msg.chs_ctrl = self.__chs_ctrl_to_msg(out)
+        self.__chs_ctrl_pub.publish(msg)
 
     @staticmethod
     def __jnt_to_msg(jnt) -> HexRosJnt:
@@ -213,38 +192,29 @@ class DataInterface(InterfaceBase):
         )
 
     @staticmethod
-    def __arm_ctrl_to_msg(arm: HexDcRoboArmCtrl) -> HexRosRoboArmCtrl:
-        return HexRosRoboArmCtrl(
-            ctrl_mode=int(arm.ctrl_mode),
-            grav=Vector3(x=arm.grav.x, y=arm.grav.y, z=arm.grav.z),
-            jnt=DataInterface.__jnt_to_msg(arm.jnt),
-            pose=Pose(
-                position=Point(
-                    x=arm.pose.position.x,
-                    y=arm.pose.position.y,
-                    z=arm.pose.position.z,
+    def __chs_ctrl_to_msg(chs: HexDcRoboChsCtrl) -> HexRosRoboChsCtrl:
+        return HexRosRoboChsCtrl(
+            ctrl_mode=int(chs.ctrl_mode),
+            jnt=DataInterface.__jnt_to_msg(chs.jnt),
+            vel=Twist(
+                linear=Vector3(
+                    x=chs.vel.linear.x,
+                    y=chs.vel.linear.y,
+                    z=chs.vel.linear.z,
                 ),
-                orientation=Quaternion(
-                    x=arm.pose.orientation.x,
-                    y=arm.pose.orientation.y,
-                    z=arm.pose.orientation.z,
-                    w=arm.pose.orientation.w,
+                angular=Vector3(
+                    x=chs.vel.angular.x,
+                    y=chs.vel.angular.y,
+                    z=chs.vel.angular.z,
                 ),
             ),
-        )
-
-    @staticmethod
-    def __grip_ctrl_to_msg(grip: HexDcRoboGripCtrl) -> HexRosRoboGripCtrl:
-        return HexRosRoboGripCtrl(
-            ctrl_mode=int(grip.ctrl_mode),
-            jnt=DataInterface.__jnt_to_msg(grip.jnt),
         )
 
     ####################
     ### subscribers
     ####################
-    def __manip_state_callback(self, msg: HexRosRoboManipStateStamped):
-        self._manip_state_deque.append(self.__manip_state_msg_to_dc(msg))
+    def __chs_state_callback(self, msg: HexRosRoboChsStateStamped):
+        self._chs_state_deque.append(self.__chs_state_msg_to_dc(msg))
 
     def __keyboard_callback(self, msg: HexRosTeleopKeyboardStateStamped):
         self._keyboard_deque.append(self.__keyboard_msg_to_dc(msg))
@@ -268,24 +238,40 @@ class DataInterface(InterfaceBase):
         )
 
     @staticmethod
-    def __pose_to_dc(pose: Pose) -> HexDcBasePose:
-        return HexDcBasePose(
-            position=HexDcBaseVector3(
-                x=pose.position.x,
-                y=pose.position.y,
-                z=pose.position.z,
+    def __odom_to_dc(odom) -> HexDcBaseOdometry:
+        pose = odom.pose.pose
+        twist = odom.twist.twist
+        return HexDcBaseOdometry(
+            pose=HexDcBasePose(
+                position=HexDcBaseVector3(
+                    x=pose.position.x,
+                    y=pose.position.y,
+                    z=pose.position.z,
+                ),
+                orientation=HexDcBaseQuaternion(
+                    x=pose.orientation.x,
+                    y=pose.orientation.y,
+                    z=pose.orientation.z,
+                    w=pose.orientation.w,
+                ),
             ),
-            orientation=HexDcBaseQuaternion(
-                x=pose.orientation.x,
-                y=pose.orientation.y,
-                z=pose.orientation.z,
-                w=pose.orientation.w,
+            twist=HexDcBaseTwist(
+                linear=HexDcBaseVector3(
+                    x=twist.linear.x,
+                    y=twist.linear.y,
+                    z=twist.linear.z,
+                ),
+                angular=HexDcBaseVector3(
+                    x=twist.angular.x,
+                    y=twist.angular.y,
+                    z=twist.angular.z,
+                ),
             ),
         )
 
     @staticmethod
-    def __manip_state_msg_to_dc(
-            msg: HexRosRoboManipStateStamped) -> HexDcRoboManipStateStamped:
+    def __chs_state_msg_to_dc(
+            msg: HexRosRoboChsStateStamped) -> HexDcRoboChsStateStamped:
         header = HexDcBaseHeader(
             stamp=HexDcBaseTime(
                 secs=int(msg.header.stamp.sec),
@@ -294,20 +280,12 @@ class DataInterface(InterfaceBase):
             frame_id=msg.header.frame_id,
         )
 
-        arm_msg = msg.manip_state.arm_state
-        arm_state = HexDcRoboArmState(
-            jnt=DataInterface.__jnt_state_to_dc(arm_msg.jnt),
-            pose=DataInterface.__pose_to_dc(arm_msg.pose),
+        chs_state = HexDcRoboChsState(
+            jnt=DataInterface.__jnt_state_to_dc(msg.chs_state.jnt),
+            odom=DataInterface.__odom_to_dc(msg.chs_state.odom),
         )
 
-        grip_msg = msg.manip_state.grip_state
-        grip_state = HexDcRoboGripState(
-            jnt=DataInterface.__jnt_state_to_dc(grip_msg.jnt), )
-
-        return HexDcRoboManipStateStamped(
+        return HexDcRoboChsStateStamped(
             header=header,
-            manip_state=HexDcRoboManipState(
-                arm_state=arm_state,
-                grip_state=grip_state,
-            ),
+            chs_state=chs_state,
         )

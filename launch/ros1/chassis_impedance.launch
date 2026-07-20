@@ -6,15 +6,15 @@
 <!--#######################################-->
 
 <launch>
-    <node name="arm_comp" pkg="hex_ros_arm_comp" type="arm_comp.py" output="screen">
+    <node name="chassis_impedance" pkg="hex_ros_chassis_impedance" type="chassis_impedance.py" output="screen">
         <!-- load default parameters -->
-        <rosparam file="$(find hex_ros_arm_comp)/config/ros1/params.yaml"/>
-        <!-- robot model used for dynamics -->
-        <param name="model_urdf" value="$(find hex_ros_urdf_archer_y6)/urdf/gr100_comp.urdf"/>
+        <rosparam file="$(find hex_ros_chassis_impedance)/config/ros1/params.yaml"/>
+        <!-- robot model urdf -->
+        <param name="model_urdf" value="$(find hex_ros_urdf_maver_x4)/urdf/model.urdf"/>
         <!-- subscribe -->
-        <remap from="manip_state" to="manip_state"/>
+        <remap from="chs_state" to="chs_state"/>
         <remap from="teleop_keyboard_state" to="teleop_keyboard_state"/>
         <!-- publish -->
-        <remap from="manip_ctrl" to="manip_ctrl"/>
+        <remap from="chs_ctrl" to="chs_ctrl"/>
     </node>
 </launch>

@@ -11,7 +11,7 @@
     <arg name="rviz" default="true"/>
 
     <!-- sim environment (mujoco + rviz, no built-in test ctrl) -->
-    <include file="$(find hex_ros_sim_archer_y6)/launch/ros1/sim_archer_y6.launch">
+    <include file="$(find hex_ros_sim_maver_x4)/launch/ros1/sim_maver_x4.launch">
         <arg name="viewer" value="$(arg viewer)"/>
         <arg name="rviz" value="$(arg rviz)"/>
         <arg name="test" value="false"/>
@@ -20,6 +20,6 @@
     <!-- keyboard teleop -->
     <include file="$(find hex_ros_teleop_keyboard)/launch/ros1/teleop_keyboard.launch"/>
 
-    <!-- gravity compensation node -->
-    <include file="$(find hex_ros_arm_comp)/launch/ros1/arm_comp.launch"/>
+    <!-- impedance control node -->
+    <include file="$(find hex_ros_chassis_impedance)/launch/ros1/chassis_impedance.launch"/>
 </launch>

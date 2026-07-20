@@ -16,9 +16,9 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    sim_pkg_path = FindPackageShare('hex_ros_sim_archer_y6')
+    sim_pkg_path = FindPackageShare('hex_ros_sim_maver_x4')
     keyboard_pkg_path = FindPackageShare('hex_ros_teleop_keyboard')
-    comp_pkg_path = FindPackageShare('hex_ros_arm_comp')
+    impedance_pkg_path = FindPackageShare('hex_ros_chassis_impedance')
 
     # args
     viewer_arg = DeclareLaunchArgument(
@@ -34,7 +34,7 @@ def generate_launch_description():
     # sim environment (mujoco + rviz, no built-in test ctrl)
     sim_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            PathJoinSubstitution([sim_pkg_path, "sim_archer_y6.launch.py"])),
+            PathJoinSubstitution([sim_pkg_path, "sim_maver_x4.launch.py"])),
         launch_arguments={
             'viewer': LaunchConfiguration('viewer'),
             'rviz': LaunchConfiguration('rviz'),
@@ -48,15 +48,16 @@ def generate_launch_description():
             PathJoinSubstitution(
                 [keyboard_pkg_path, "teleop_keyboard.launch.py"])), )
 
-    # gravity compensation node
-    comp_launch = IncludeLaunchDescription(
+    # impedance control node
+    impedance_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            PathJoinSubstitution([comp_pkg_path, "arm_comp.launch.py"])), )
+            PathJoinSubstitution(
+                [impedance_pkg_path, "chassis_impedance.launch.py"])), )
 
     return LaunchDescription([
         viewer_arg,
         rviz_arg,
         sim_launch,
         keyboard_launch,
-        comp_launch,
+        impedance_launch,
     ])

@@ -1,18 +1,16 @@
-# hex_ros_arm_comp
+# hex_ros_chassis_impedance
 
 ## What does this package do
 
-This package is a **gravity compensation demo** for the Archer Y6 arm that works in **both ROS 1 and ROS 2**.
+This package is an **impedance control demo** for the Maver X4 chassis that works in **both ROS 1 and ROS 2**.
 
-The node first drives the arm to a stable start pose, then switches into gravity compensation: at every control cycle it reads the latest arm state, computes the joint torques needed to hold a virtual extra end-effector payload, and publishes a `MIT` control command with zero stiffness/damping. The robot driver (or the [`hex_ros_sim_archer_y6`](../hex_ros_sim_archer_y6) simulator) adds the model gravity/coriolis compensation, so the arm "floats" and can be moved by hand.
+The node first drives the steering joints to a stable configuration, records the current base pose as the equilibrium, then switches into SE(2) impedance control: at every control cycle it reads `/chs_state`, limits the planar pose error toward the equilibrium, maps the body-frame error to a twist command, and publishes a `VEL` control command on `/chs_ctrl`. The robot driver (or the [`hex_ros_sim_maver_x4`](../hex_ros_sim_maver_x4) simulator) tracks that twist through chassis inverse kinematics, so the base compliantly returns toward the equilibrium pose when disturbed.
 
 A keyboard interface (see [`hex_ros_teleop_keyboard`](../hex_ros_teleop_keyboard)) is used for runtime control:
 
-* press **`q`** to stop the demo and move the arm back to the stable pose.
+* press **`q`** to stop the demo and settle the chassis back to the stable joint configuration.
 
 Data recording is left to ROS's built-in bag tools (`ros2 bag record` / `rosbag record`).
-
-This demo is the ROS port of the `hex_flow_comp_archer_y6` node-flow demo.
 
 ## Maintainer
 
@@ -24,8 +22,8 @@ Ensure the following software is installed:
 
 * **ROS**: Refer to the [ROS Installation guide](http://wiki.ros.org/ROS/Installation)
 * **hex_ros_msgs**: provides the robot/teleop message definitions.
-* **hex_ros_urdf_archer_y6**: provides the `gr100_comp.urdf` used for the dynamics model.
-* A state/control source for the arm, e.g. **hex_ros_sim_archer_y6**.
+* **hex_ros_urdf_maver_x4**: provides the `model.urdf` used by launch.
+* A state/control source for the chassis, e.g. **hex_ros_sim_maver_x4**.
 * A keyboard source, e.g. **hex_ros_teleop_keyboard**.
 
 ### Verified Platforms
@@ -41,33 +39,33 @@ Ensure the following software is installed:
 
 ### Published Topics
 
-| Topic         | Msg Type                                | Description                                       |
-| ------------- | --------------------------------------- | ------------------------------------------------ |
-| `/manip_ctrl` | `hex_ros_msgs/HexRosRoboManipCtrlStamped` | Arm + gripper control command.                   |
+| Topic       | Msg Type                                   | Description            |
+| ----------- | ------------------------------------------ | ---------------------- |
+| `/chs_ctrl` | `hex_ros_msgs/HexRosRoboChsCtrlStamped`    | Chassis control command. |
 
 ### Subscribed Topics
 
-| Topic                    | Msg Type                                       | Description                  |
-| ------------------------ | ---------------------------------------------- | ---------------------------- |
-| `/manip_state`           | `hex_ros_msgs/HexRosRoboManipStateStamped`     | Current arm + gripper state. |
-| `/teleop_keyboard_state` | `hex_ros_msgs/HexRosTeleopKeyboardStateStamped` | Keyboard key states.         |
+| Topic                    | Msg Type                                        | Description              |
+| ------------------------ | ----------------------------------------------- | ------------------------ |
+| `/chs_state`             | `hex_ros_msgs/HexRosRoboChsStateStamped`        | Current chassis state.   |
+| `/teleop_keyboard_state` | `hex_ros_msgs/HexRosTeleopKeyboardStateStamped` | Keyboard key states.     |
 
 ### Parameters
 
-| Name                 | Data Type        | Description                                            |
-| -------------------- | ---------------- | ----------------------------------------------------- |
-| `rate_ros`           | `double`         | Gravity compensation work loop rate [hz].             |
-| `rate_teleop`        | `double`         | Keyboard monitor rate [hz].                           |
-| `model_urdf`         | `string`         | Path to the URDF used for the dynamics model.         |
-| `model_frame_id`     | `string`         | Frame id of the robot base.                           |
-| `pose_end_in_flange` | `vector<double>` | End-effector pose in flange `[x,y,z,qw,qx,qy,qz]`.    |
-| `gravity`            | `vector<double>` | Gravity vector `[x,y,z]` [m/s^2].                     |
-| `arm_stable_pos`     | `vector<double>` | Arm joint stable (init/exit) position [rad].          |
-| `grip_stable_pos`    | `vector<double>` | Gripper stable position.                              |
-| `arm_kp` / `arm_kd`  | `vector<double>` | Arm gains used while moving to the stable position.   |
-| `grip_kp` / `grip_kd`| `vector<double>` | Gripper gains used while moving to the stable position.|
-| `arrive_threshold`   | `double`         | Max joint error [rad] to consider the pose reached.   |
-| `extra_mass`         | `double`         | Extra end-effector payload mass to compensate [kg].   |
+| Name                 | Data Type        | Description                                              |
+| -------------------- | ---------------- | -------------------------------------------------------- |
+| `rate_ros`           | `double`         | Impedance control work loop rate [hz].                  |
+| `rate_teleop`        | `double`         | Keyboard monitor rate [hz].                             |
+| `model_urdf`         | `string`         | Path to the URDF (set by launch).                       |
+| `model_frame_id`     | `string`         | Frame id of the robot base.                             |
+| `chs_stable_pos`     | `vector<double>` | Stable joint position (init/exit) [rad].                |
+| `chs_stable_vel`     | `vector<double>` | Stable joint velocity targets [rad/s].                  |
+| `chs_kp` / `chs_kd`  | `vector<double>` | MIT gains used while moving to the stable configuration.|
+| `impedance_kp` / `kd`| `vector<double>` | SE(2) gains mapped to body twist `[vx, vy, omega]`.     |
+| `chs_pos_threshold`  | `double`         | Max XY error step applied per cycle [m].                |
+| `chs_yaw_threshold`  | `double`         | Max yaw error step applied per cycle [rad].             |
+| `chs_vel_kd`         | `vector<double>` | Joint `kd` used by VEL mode motor tracking.             |
+| `arrive_threshold`   | `double`         | Max yaw joint error [rad] to consider settled.          |
 
 ## Getting Started
 
@@ -88,7 +86,7 @@ Ensure the following software is installed:
 3. Clone the repository:
 
    ```shell
-   git clone https://github.com/hexfellow/hex_ros_arm_comp.git
+   git clone https://github.com/hexfellow/hex_ros_chassis_impedance.git
    ```
 
 4. Navigate back and build the workspace:
@@ -123,27 +121,35 @@ Ensure the following software is installed:
 
 ### Usage
 
-1. Start an arm state/control source (e.g. the simulator) and the keyboard node:
+One-shot bringup (sim + keyboard + impedance):
+
+```shell
+ros2 launch hex_ros_chassis_impedance sim_impedance.launch.py
+```
+
+Or start the pieces separately:
+
+1. Start a chassis state/control source (e.g. the simulator) and the keyboard node:
 
    For ROS 2:
 
    ```shell
-   ros2 launch hex_ros_sim_archer_y6 sim_archer_y6.launch.py
+   ros2 launch hex_ros_sim_maver_x4 sim_maver_x4.launch.py
    ros2 launch hex_ros_teleop_keyboard teleop_keyboard.launch.py
    ```
 
-2. Launch the `arm_comp` node:
+2. Launch the `chassis_impedance` node:
 
    For ROS 1:
 
    ```shell
-   roslaunch hex_ros_arm_comp arm_comp.launch
+   roslaunch hex_ros_chassis_impedance chassis_impedance.launch
    ```
 
    For ROS 2:
 
    ```shell
-   ros2 launch hex_ros_arm_comp arm_comp.launch.py
+   ros2 launch hex_ros_chassis_impedance chassis_impedance.launch.py
    ```
 
-3. The arm moves to the stable pose and then enters gravity compensation. Press `q` to exit. To record data, use ROS's bag tools, e.g. `ros2 bag record -a`.
+3. The chassis settles to the stable joint pose, records the equilibrium, then enters impedance control. Push the base in the MuJoCo viewer to feel the restoring behavior. Press `q` to exit. To record data, use ROS's bag tools, e.g. `ros2 bag record -a`.

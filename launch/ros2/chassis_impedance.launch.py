@@ -14,35 +14,35 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    comp_pkg_path = FindPackageShare('hex_ros_arm_comp')
-    urdf_pkg_path = FindPackageShare('hex_ros_urdf_archer_y6')
+    impedance_pkg_path = FindPackageShare('hex_ros_chassis_impedance')
+    urdf_pkg_path = FindPackageShare('hex_ros_urdf_maver_x4')
 
-    # arm_comp node
-    comp_param_path = PathJoinSubstitution(
-        [comp_pkg_path, "config", "ros2", "params.yaml"])
+    # chassis_impedance node
+    impedance_param_path = PathJoinSubstitution(
+        [impedance_pkg_path, "config", "ros2", "params.yaml"])
     urdf_file_path = PathJoinSubstitution(
-        [urdf_pkg_path, "urdf", "gr100_comp.urdf"])
+        [urdf_pkg_path, "urdf", "model.urdf"])
 
-    arm_comp_node = Node(
-        package='hex_ros_arm_comp',
-        executable='arm_comp',
-        name='arm_comp',
+    chassis_impedance_node = Node(
+        package='hex_ros_chassis_impedance',
+        executable='chassis_impedance',
+        name='chassis_impedance',
         output="screen",
         emulate_tty=True,
         parameters=[
-            comp_param_path,
+            impedance_param_path,
             {
                 "model_urdf": ParameterValue(urdf_file_path, value_type=str),
                 "use_sim_time": True,
             },
         ],
         remappings=[
-            ('manip_state', 'manip_state'),
-            ('manip_ctrl', 'manip_ctrl'),
+            ('chs_state', 'chs_state'),
+            ('chs_ctrl', 'chs_ctrl'),
             ('teleop_keyboard_state', 'teleop_keyboard_state'),
         ],
     )
 
     return LaunchDescription([
-        arm_comp_node,
+        chassis_impedance_node,
     ])

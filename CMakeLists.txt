@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(hex_ros_arm_comp)
+project(hex_ros_chassis_impedance)
 
 find_package(catkin REQUIRED)
 
