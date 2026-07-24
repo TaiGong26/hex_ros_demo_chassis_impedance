@@ -6,9 +6,9 @@
 <!--#######################################-->
 
 <launch>
-    <node name="chassis_impedance" pkg="hex_ros_chassis_impedance" type="chassis_impedance.py" output="screen">
+    <node name="chassis_impedance" pkg="hex_ros_demo_chassis_impedance" type="chassis_impedance.py" output="screen">
         <!-- load default parameters -->
-        <rosparam file="$(find hex_ros_chassis_impedance)/config/ros1/params.yaml"/>
+        <rosparam file="$(find hex_ros_demo_chassis_impedance)/config/ros1/params.yaml"/>
         <!-- robot model urdf -->
         <param name="model_urdf" value="$(find hex_ros_urdf_maver_x4)/urdf/model.urdf"/>
         <!-- subscribe -->

@@ -14,7 +14,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    impedance_pkg_path = FindPackageShare('hex_ros_chassis_impedance')
+    impedance_pkg_path = FindPackageShare('hex_ros_demo_chassis_impedance')
     urdf_pkg_path = FindPackageShare('hex_ros_urdf_maver_x4')
 
     # chassis_impedance node
@@ -24,7 +24,7 @@ def generate_launch_description():
         [urdf_pkg_path, "urdf", "model.urdf"])
 
     chassis_impedance_node = Node(
-        package='hex_ros_chassis_impedance',
+        package='hex_ros_demo_chassis_impedance',
         executable='chassis_impedance',
         name='chassis_impedance',
         output="screen",

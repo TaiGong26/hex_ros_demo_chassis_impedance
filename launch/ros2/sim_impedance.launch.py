@@ -18,7 +18,7 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     sim_pkg_path = FindPackageShare('hex_ros_sim_maver_x4')
     keyboard_pkg_path = FindPackageShare('hex_ros_teleop_keyboard')
-    impedance_pkg_path = FindPackageShare('hex_ros_chassis_impedance')
+    impedance_pkg_path = FindPackageShare('hex_ros_demo_chassis_impedance')
 
     # args
     viewer_arg = DeclareLaunchArgument(

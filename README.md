@@ -1,4 +1,4 @@
-# hex_ros_chassis_impedance
+# hex_ros_demo_chassis_impedance
 
 ## What does this package do
 
@@ -86,7 +86,7 @@ Ensure the following software is installed:
 3. Clone the repository:
 
    ```shell
-   git clone https://github.com/hexfellow/hex_ros_chassis_impedance.git
+   git clone https://github.com/hexfellow/hex_ros_demo_chassis_impedance.git
    ```
 
 4. Navigate back and build the workspace:
@@ -124,7 +124,7 @@ Ensure the following software is installed:
 One-shot bringup (sim + keyboard + impedance):
 
 ```shell
-ros2 launch hex_ros_chassis_impedance sim_impedance.launch.py
+ros2 launch hex_ros_demo_chassis_impedance sim_impedance.launch.py
 ```
 
 Or start the pieces separately:
@@ -143,13 +143,13 @@ Or start the pieces separately:
    For ROS 1:
 
    ```shell
-   roslaunch hex_ros_chassis_impedance chassis_impedance.launch
+   roslaunch hex_ros_demo_chassis_impedance chassis_impedance.launch
    ```
 
    For ROS 2:
 
    ```shell
-   ros2 launch hex_ros_chassis_impedance chassis_impedance.launch.py
+   ros2 launch hex_ros_demo_chassis_impedance chassis_impedance.launch.py
    ```
 
 3. The chassis settles to the stable joint pose, records the equilibrium, then enters impedance control. Push the base in the MuJoCo viewer to feel the restoring behavior. Press `q` to exit. To record data, use ROS's bag tools, e.g. `ros2 bag record -a`.

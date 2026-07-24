@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
 from glob import glob
 
-package_name = 'hex_ros_chassis_impedance'
+package_name = 'hex_ros_demo_chassis_impedance'
 
 
 def get_files(tar: str, src: str):
@@ -38,7 +38,7 @@ setup(
     license='Apache-2.0',
     entry_points={
         'console_scripts': [
-            'chassis_impedance = hex_ros_chassis_impedance.chassis_impedance:main',
+            'chassis_impedance = hex_ros_demo_chassis_impedance.chassis_impedance:main',
         ],
     },
 )

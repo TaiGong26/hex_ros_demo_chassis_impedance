@@ -21,5 +21,5 @@
     <include file="$(find hex_ros_teleop_keyboard)/launch/ros1/teleop_keyboard.launch"/>
 
     <!-- impedance control node -->
-    <include file="$(find hex_ros_chassis_impedance)/launch/ros1/chassis_impedance.launch"/>
+    <include file="$(find hex_ros_demo_chassis_impedance)/launch/ros1/chassis_impedance.launch"/>
 </launch>
