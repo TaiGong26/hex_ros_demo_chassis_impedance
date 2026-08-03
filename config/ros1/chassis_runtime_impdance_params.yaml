@@ -1,0 +1,39 @@
+# impedance control work loop rate [hz]
+rate_ros: 500.0
+
+# keyboard monitor rate [hz]
+rate_teleop: 100.0
+
+# robot model (urdf path set by launch)
+model_urdf: ""
+model_frame_id: "base_link"
+
+# joint order: yaw1, wheel1, yaw2, wheel2, yaw3, wheel3, yaw4, wheel4
+# stable (init / exit) joint position [rad] / wheel vel targets [rad/s]
+chs_stable_pos: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+chs_stable_vel: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+# gains used while moving to the stable joint configuration (MIT)
+chs_kp: [20.0, 0.0, 20.0, 0.0, 20.0, 0.0, 20.0, 0.0]
+chs_kd: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+# SE(2) impedance gains mapped to body twist [vx, vy, omega]
+# units: [1/s, 1/s, 1/s] * pose error -> [m/s, m/s, rad/s]
+impedance_kp: [0.5, 0.5, 0.5]
+impedance_kd: [0.0, 0.0, 0.0]
+
+# max SE(2) error step applied per cycle
+chs_pos_threshold: 0.2
+chs_yaw_threshold: 0.2
+
+# Maver X4 chassis geometry [m]
+chs_bias: 0.02
+chs_wheel_radius: 0.0625
+chs_track_width: 0.28
+chs_wheel_base: 0.424
+
+# joint kd used by VEL mode motor tracking during impedance
+chs_vel_kd: [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0]
+
+# max yaw joint error [rad] to consider the stable pose reached
+arrive_threshold: 0.06
