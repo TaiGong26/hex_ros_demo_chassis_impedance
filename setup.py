@@ -39,7 +39,6 @@ setup(
     entry_points={
         'console_scripts': [
             'chassis_impedance = hex_ros_demo_chassis_impedance.chassis_impedance:main',
-            'chassis_runtime_impdance = hex_ros_demo_chassis_impedance.chassis_runtime_impdance:main',
         ],
     },
 )
