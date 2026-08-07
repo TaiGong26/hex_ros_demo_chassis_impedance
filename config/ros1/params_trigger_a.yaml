@@ -1,0 +1,17 @@
+# impedance control work loop rate [hz]
+rate_ros: 500.0
+
+# keyboard monitor rate [hz]
+rate_teleop: 100.0
+
+# isotropic SE(2) impedance gains [pos, yaw]
+chs_impedance_kp: [200.0, 100.0]
+chs_impedance_kd: [10.0, 5.0]
+chs_pos_threshold: 1.0
+chs_yaw_threshold: 1.0
+
+chs_type: "trigger_a"
+
+# Trigger A chassis geometry [m]
+chs_wheel_radius: 0.102
+chs_wheel_distance: 0.3252

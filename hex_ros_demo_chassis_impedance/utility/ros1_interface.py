@@ -64,6 +64,12 @@ class DataInterface(InterfaceBase):
             rospy.get_param('~model_frame_id', "base_link"),
         }
         self._impedance_param = {
+            "chs_impedance_kp":
+            list(rospy.get_param('~chs_impedance_kp',
+                                 rospy.get_param('~impedance_kp', [0.5, 0.5]))),
+            "chs_impedance_kd":
+            list(rospy.get_param('~chs_impedance_kd',
+                                 rospy.get_param('~impedance_kd', [0.0, 0.0]))),
             "chs_stable_pos":
             list(rospy.get_param('~chs_stable_pos', list(_ZERO8))),
             "chs_stable_vel":
@@ -74,10 +80,6 @@ class DataInterface(InterfaceBase):
                     '~chs_kp', [20.0, 0.0, 20.0, 0.0, 20.0, 0.0, 20.0, 0.0])),
             "chs_kd":
             list(rospy.get_param('~chs_kd', [1.0] * _CHS_DOF)),
-            "impedance_kp":
-            list(rospy.get_param('~impedance_kp', [0.5, 0.5, 0.5])),
-            "impedance_kd":
-            list(rospy.get_param('~impedance_kd', [0.0, 0.0, 0.0])),
             "chs_pos_threshold":
             rospy.get_param('~chs_pos_threshold', 0.2),
             "chs_yaw_threshold":
@@ -91,6 +93,8 @@ class DataInterface(InterfaceBase):
             rospy.get_param('~arrive_threshold', 0.06),
         }
         self._chs_param = {
+            "chs_type":
+            str(rospy.get_param('~chs_type', 'maver_x4')),
             "bias":
             float(rospy.get_param('~chs_bias', 0.02)),
             "wheel_radius":
@@ -99,6 +103,8 @@ class DataInterface(InterfaceBase):
             float(rospy.get_param('~chs_track_width', 0.28)),
             "wheel_base":
             float(rospy.get_param('~chs_wheel_base', 0.424)),
+            "wheel_distance":
+            float(rospy.get_param('~chs_wheel_distance', 0.0)),
         }
 
         ### publisher

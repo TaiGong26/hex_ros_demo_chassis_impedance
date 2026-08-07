@@ -1,0 +1,15 @@
+<launch>
+    <arg name="viewer" default="true"/>
+    <arg name="rviz" default="true"/>
+
+    <include file="$(find hex_ros_sim_trigger_a)/launch/ros1/sim_trigger_a.launch">
+        <arg name="viewer" value="$(arg viewer)"/>
+        <arg name="rviz" value="$(arg rviz)"/>
+        <arg name="test" value="false"/>
+    </include>
+
+    <include file="$(find hex_ros_teleop_keyboard)/launch/ros1/teleop_keyboard.launch"/>
+    <include file="$(find hex_ros_demo_chassis_impedance)/launch/ros1/chassis_impedance_trigger_a.launch">
+        <arg name="use_sim_time" value="true"/>
+    </include>
+</launch>

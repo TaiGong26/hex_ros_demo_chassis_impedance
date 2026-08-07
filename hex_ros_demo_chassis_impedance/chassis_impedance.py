@@ -6,8 +6,6 @@
 # Date  : 2026-06-30
 ################################################################
 
-import os
-import sys
 import time
 import traceback
 import threading
@@ -17,9 +15,8 @@ import numpy as np
 from hex_util_ros import quat2yaw
 from hex_util_ros.robot_util import angle_norm
 
-scrpit_path = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(scrpit_path)
-from utility import DataInterface
+from .chs_dyn import MaverX4Dynamics, TriggerADynamics
+from .utility import DataInterface
 
 from hex_util_msg.dataclass.dataclass_base import (
     HexDcBaseVector3,
@@ -54,25 +51,17 @@ class ChassisImpedance:
             self.__impedance_param["chs_impedance_kp"], dtype=np.float64)
         self.__impedance_kd = np.asarray(
             self.__impedance_param["chs_impedance_kd"], dtype=np.float64)
+        if self.__impedance_kp.shape != (2,) or self.__impedance_kd.shape != (2,):
+            raise ValueError(
+                "chs_impedance_kp and chs_impedance_kd must be [pos, yaw]")
         self.__chs_pos_threshold = float(
             self.__impedance_param["chs_pos_threshold"])
         self.__chs_yaw_threshold = float(
             self.__impedance_param["chs_yaw_threshold"])
         self.__start_pose = np.zeros(3, dtype=np.float64)
 
-        # Maver X4 chassis geometry (from params) + derived terms
-        self.__chs_params = dict(self.__data_interface.get_chs_param())
-        self.__chs_params["bias_inv"] = 1.0 / self.__chs_params["bias"]
-        self.__chs_params["wheel_radius_inv"] = (
-            1.0 / self.__chs_params["wheel_radius"])
-        # distance from base origin to each yaw joint
-        self.__chs_params["wheel_distance"] = 0.5 * np.ones(
-            4) * np.sqrt(self.__chs_params["track_width"]**2 +
-                         self.__chs_params["wheel_base"]**2)
-        temp_beta = np.arctan2(self.__chs_params["track_width"],
-                               self.__chs_params["wheel_base"])
-        self.__chs_params["beta"] = np.array(
-            [temp_beta, np.pi - temp_beta, temp_beta - np.pi, -temp_beta])
+        self.__chs_dyn = self.__create_chs_dyn(
+            self.__data_interface.get_chs_param())
 
         ### threads
         self.__stop_event = threading.Event()
@@ -143,30 +132,21 @@ class ChassisImpedance:
             dtype=np.float64,
         )
 
-    def __calc_jac_inv(self, yaw: np.ndarray) -> np.ndarray:
-        """
-        Inverse Jacobian (8x3): motor_vel = jac_inv @ [vx, vy, omega].
-        Joint order: [yaw1, wheel1, yaw2, wheel2, yaw3, wheel3, yaw4, wheel4].
-        Same construction as hex_ros_sim_maver_x4.MujocoSim.__calc_jac_inv.
-        """
-        yaw = np.asarray(yaw, dtype=np.float64).reshape(4)
-        sin_theta = np.sin(yaw)
-        cos_theta = np.cos(yaw)
-        sin_theta_beta = np.sin(yaw - self.__chs_params["beta"])
-        cos_theta_beta = np.cos(yaw - self.__chs_params["beta"])
+    @staticmethod
+    def __calc_planar_component(total_gain: float,
+                                direction: np.ndarray) -> np.ndarray:
+        norm = np.linalg.norm(direction)
+        if norm <= np.finfo(np.float64).eps:
+            return np.zeros(2, dtype=np.float64)
+        return float(total_gain) * direction / norm
 
-        mat_wheel = np.column_stack(
-            (cos_theta, sin_theta, self.__chs_params["wheel_distance"] *
-             sin_theta_beta)) * self.__chs_params["wheel_radius_inv"]
-        mat_yaw = np.column_stack(
-            (-sin_theta, cos_theta,
-             self.__chs_params["wheel_distance"] * cos_theta_beta -
-             self.__chs_params["bias"])) * self.__chs_params["bias_inv"]
-
-        jac_inv = np.empty((CHS_DOF, 3), dtype=np.float64)
-        jac_inv[0::2, :] = mat_yaw
-        jac_inv[1::2, :] = mat_wheel
-        return jac_inv
+    def __create_chs_dyn(self, chs_params):
+        chs_type = chs_params["chs_type"]
+        if chs_type == "maver_x4":
+            return MaverX4Dynamics(chs_params)
+        if chs_type == "trigger_a":
+            return TriggerADynamics(chs_params)
+        raise ValueError(f"Unsupported chs_type: {chs_type}")
 
     ##############################################################
     # Control builders
@@ -239,14 +219,24 @@ class ChassisImpedance:
                     -self.__chs_yaw_threshold,
                     self.__chs_yaw_threshold,
                 )
-                force = self.__impedance_kp * err - self.__impedance_kd * cur_twist
+                # Planar stiffness and damping are isotropic. Their XY
+                # components follow the current position-error and velocity
+                # directions, respectively.
+                force = np.empty(3, dtype=np.float64)
+                force[:2] = (
+                    self.__calc_planar_component(self.__impedance_kp[0],
+                                                 err[:2]) -
+                    self.__calc_planar_component(self.__impedance_kd[0],
+                                                 cur_twist[:2]))
+                force[2] = (self.__impedance_kp[1] * err[2] -
+                            self.__impedance_kd[1] * cur_twist[2])
 
-                # qdot = jac_inv @ twist, virtual work => F = jac_inv.T @ tau
-                # so tau = (jac_inv.T)^+ @ F
+                # qdot = jac_inv @ twist; calc_jac is pinv(jac_inv), so
+                # tau = calc_jac.T @ force from virtual work.
                 jnt_pos = np.asarray(state.chs_state.jnt.position,
                                      dtype=np.float64)
-                jac_inv = self.__calc_jac_inv(jnt_pos[YAW_IDX])
-                tau = np.linalg.pinv(jac_inv.T) @ force
+                jac = self.__chs_dyn.calc_jac(jnt_pos[YAW_IDX])
+                tau = jac.T @ force
                 self.__data_interface.pub_chs_ctrl(
                     self.__build_impedance_ctrl(tau))
 

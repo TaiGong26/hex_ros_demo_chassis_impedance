@@ -61,14 +61,16 @@ class DataInterface(InterfaceBase):
 
         ### parameters
         self.__node.declare_parameter('rate_teleop', 100.0)
-        self.__node.declare_parameter('chs_impedance_kp', [2.0, 2.0, 2.0])
-        self.__node.declare_parameter('chs_impedance_kd', [1.0, 1.0, 1.0])
+        self.__node.declare_parameter('chs_impedance_kp', [2.0, 2.0])
+        self.__node.declare_parameter('chs_impedance_kd', [1.0, 1.0])
         self.__node.declare_parameter('chs_pos_threshold', 0.2)
         self.__node.declare_parameter('chs_yaw_threshold', 0.2)
+        self.__node.declare_parameter('chs_type', 'maver_x4')
         self.__node.declare_parameter('chs_bias', 0.02)
         self.__node.declare_parameter('chs_wheel_radius', 0.0625)
         self.__node.declare_parameter('chs_track_width', 0.28)
         self.__node.declare_parameter('chs_wheel_base', 0.424)
+        self.__node.declare_parameter('chs_wheel_distance', 0.0)
 
         self._rate_param.update({
             "teleop":
@@ -85,6 +87,8 @@ class DataInterface(InterfaceBase):
             self.__node.get_parameter('chs_yaw_threshold').value,
         }
         self._chs_param = {
+            "chs_type":
+            str(self.__node.get_parameter('chs_type').value),
             "bias":
             float(self.__node.get_parameter('chs_bias').value),
             "wheel_radius":
@@ -93,6 +97,8 @@ class DataInterface(InterfaceBase):
             float(self.__node.get_parameter('chs_track_width').value),
             "wheel_base":
             float(self.__node.get_parameter('chs_wheel_base').value),
+            "wheel_distance":
+            float(self.__node.get_parameter('chs_wheel_distance').value),
         }
 
         ### publisher

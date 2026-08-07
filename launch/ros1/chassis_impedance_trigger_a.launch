@@ -1,0 +1,10 @@
+<launch>
+    <arg name="use_sim_time" default="true"/>
+    <node name="chassis_impedance" pkg="hex_ros_demo_chassis_impedance" type="chassis_impedance.py" output="screen">
+        <rosparam file="$(find hex_ros_demo_chassis_impedance)/config/ros1/params_trigger_a.yaml"/>
+        <param name="use_sim_time" value="$(arg use_sim_time)"/>
+        <remap from="chs_state" to="chs_state"/>
+        <remap from="teleop_keyboard_state" to="teleop_keyboard_state"/>
+        <remap from="chs_ctrl" to="chs_ctrl"/>
+    </node>
+</launch>
