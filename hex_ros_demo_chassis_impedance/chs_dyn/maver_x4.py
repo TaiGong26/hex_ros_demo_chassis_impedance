@@ -6,6 +6,7 @@ import numpy as np
 from .base import ChassisDynamicsBase
 
 _CHS_DOF = 8
+_YAW_IDX = [0, 2, 4, 6]
 
 
 class MaverX4Dynamics(ChassisDynamicsBase):
@@ -16,9 +17,9 @@ class MaverX4Dynamics(ChassisDynamicsBase):
         self._chs_params["bias_inv"] = 1.0 / self._chs_params["bias"]
         self._chs_params["wheel_radius_inv"] = (
             1.0 / self._chs_params["wheel_radius"])
-        self._chs_params["wheel_distance"] = 0.5 * np.ones(4) * np.sqrt(
-            self._chs_params["track_width"]**2 +
-            self._chs_params["wheel_base"]**2)
+        self._chs_params["wheel_distance"] = 0.5 * np.ones(
+            4) * np.sqrt(self._chs_params["track_width"]**2 +
+                         self._chs_params["wheel_base"]**2)
         beta = np.arctan2(self._chs_params["track_width"],
                           self._chs_params["wheel_base"])
         self._chs_params["beta"] = np.array(
@@ -28,7 +29,7 @@ class MaverX4Dynamics(ChassisDynamicsBase):
         return np.linalg.pinv(self.calc_jac_inv(jnt_pos))
 
     def calc_jac_inv(self, jnt_pos: np.ndarray) -> np.ndarray:
-        yaw = np.asarray(jnt_pos, dtype=np.float64).reshape(4)
+        yaw = np.asarray(jnt_pos[_YAW_IDX], dtype=np.float64).reshape(4)
         sin_theta = np.sin(yaw)
         cos_theta = np.cos(yaw)
         sin_theta_beta = np.sin(yaw - self._chs_params["beta"])

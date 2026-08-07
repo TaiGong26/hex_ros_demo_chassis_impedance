@@ -61,8 +61,8 @@ class DataInterface(InterfaceBase):
 
         ### parameters
         self.__node.declare_parameter('rate_teleop', 100.0)
-        self.__node.declare_parameter('chs_impedance_kp', [2.0, 2.0])
-        self.__node.declare_parameter('chs_impedance_kd', [1.0, 1.0])
+        self.__node.declare_parameter('chs_impedance_kp', [2.0, 2.0, 2.0])
+        self.__node.declare_parameter('chs_impedance_kd', [1.0, 1.0, 1.0])
         self.__node.declare_parameter('chs_pos_threshold', 0.2)
         self.__node.declare_parameter('chs_yaw_threshold', 0.2)
         self.__node.declare_parameter('chs_type', 'maver_x4')

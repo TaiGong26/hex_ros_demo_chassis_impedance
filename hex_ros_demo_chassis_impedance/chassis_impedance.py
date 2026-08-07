@@ -30,7 +30,6 @@ from hex_util_msg.dataclass.dataclass_robo import (
 
 # Joint order: yaw1, wheel1, yaw2, wheel2, yaw3, wheel3, yaw4, wheel4
 CHS_DOF = 8
-YAW_IDX = [0, 2, 4, 6]
 
 
 class ChassisImpedance:
@@ -51,16 +50,17 @@ class ChassisImpedance:
             self.__impedance_param["chs_impedance_kp"], dtype=np.float64)
         self.__impedance_kd = np.asarray(
             self.__impedance_param["chs_impedance_kd"], dtype=np.float64)
-        if self.__impedance_kp.shape != (2,) or self.__impedance_kd.shape != (2,):
+        if self.__impedance_kp.shape != (3, ) or self.__impedance_kd.shape != (
+                3, ):
             raise ValueError(
-                "chs_impedance_kp and chs_impedance_kd must be [pos, yaw]")
+                "chs_impedance_kp and chs_impedance_kd must be [x, y, yaw]")
         self.__chs_pos_threshold = float(
             self.__impedance_param["chs_pos_threshold"])
         self.__chs_yaw_threshold = float(
             self.__impedance_param["chs_yaw_threshold"])
         self.__start_pose = np.zeros(3, dtype=np.float64)
 
-        self.__chs_dyn = self.__create_chs_dyn(
+        self.__chs_dyn, self.__chs_dof = self.__create_chs_dyn(
             self.__data_interface.get_chs_param())
 
         ### threads
@@ -132,20 +132,12 @@ class ChassisImpedance:
             dtype=np.float64,
         )
 
-    @staticmethod
-    def __calc_planar_component(total_gain: float,
-                                direction: np.ndarray) -> np.ndarray:
-        norm = np.linalg.norm(direction)
-        if norm <= np.finfo(np.float64).eps:
-            return np.zeros(2, dtype=np.float64)
-        return float(total_gain) * direction / norm
-
     def __create_chs_dyn(self, chs_params):
         chs_type = chs_params["chs_type"]
         if chs_type == "maver_x4":
-            return MaverX4Dynamics(chs_params)
+            return MaverX4Dynamics(chs_params), 8
         if chs_type == "trigger_a":
-            return TriggerADynamics(chs_params)
+            return TriggerADynamics(chs_params), 3
         raise ValueError(f"Unsupported chs_type: {chs_type}")
 
     ##############################################################
@@ -155,13 +147,13 @@ class ChassisImpedance:
         return HexDcRoboChsCtrl(
             ctrl_mode=HexDcRoboChsCtrlMode.MIT,
             jnt=HexDcBaseJntFull(
-                pos=np.zeros(CHS_DOF),
-                vel=np.zeros(CHS_DOF),
+                pos=np.zeros(self.__chs_dof),
+                vel=np.zeros(self.__chs_dof),
                 eff=np.asarray(eff, dtype=np.float64),
-                kp=np.zeros(CHS_DOF),
-                kd=np.zeros(CHS_DOF),
-                lim_vel=np.zeros(CHS_DOF),
-                lim_acc=np.zeros(CHS_DOF),
+                kp=np.zeros(self.__chs_dof),
+                kd=np.zeros(self.__chs_dof),
+                lim_vel=np.zeros(self.__chs_dof),
+                lim_acc=np.zeros(self.__chs_dof),
             ),
             vel=HexDcBaseTwist(
                 linear=HexDcBaseVector3(),
@@ -219,23 +211,13 @@ class ChassisImpedance:
                     -self.__chs_yaw_threshold,
                     self.__chs_yaw_threshold,
                 )
-                # Planar stiffness and damping are isotropic. Their XY
-                # components follow the current position-error and velocity
-                # directions, respectively.
-                force = np.empty(3, dtype=np.float64)
-                force[:2] = (
-                    self.__calc_planar_component(self.__impedance_kp[0],
-                                                 err[:2]) -
-                    self.__calc_planar_component(self.__impedance_kd[0],
-                                                 cur_twist[:2]))
-                force[2] = (self.__impedance_kp[1] * err[2] -
-                            self.__impedance_kd[1] * cur_twist[2])
+                force = self.__impedance_kp * err - self.__impedance_kd * cur_twist
 
                 # qdot = jac_inv @ twist; calc_jac is pinv(jac_inv), so
                 # tau = calc_jac.T @ force from virtual work.
                 jnt_pos = np.asarray(state.chs_state.jnt.position,
                                      dtype=np.float64)
-                jac = self.__chs_dyn.calc_jac(jnt_pos[YAW_IDX])
+                jac = self.__chs_dyn.calc_jac(jnt_pos)
                 tau = jac.T @ force
                 self.__data_interface.pub_chs_ctrl(
                     self.__build_impedance_ctrl(tau))

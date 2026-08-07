@@ -6,9 +6,9 @@ chassis_impedance:
     # keyboard monitor rate [hz]
     rate_teleop: 100.0
 
-    # isotropic SE(2) impedance gains [pos, yaw]
-    chs_impedance_kp: [200.0, 100.0]
-    chs_impedance_kd: [10.0, 5.0]
+    # SE(2) impedance gains [x, y, yaw]
+    chs_impedance_kp: [200.0, 200.0, 100.0]
+    chs_impedance_kd: [10.0, 10.0, 5.0]
     chs_pos_threshold: 1.0
     chs_yaw_threshold: 1.0
 
