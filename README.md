@@ -65,7 +65,7 @@ Ensure the following software is installed:
 | `chs_stable_vel`     | `vector<double>` | Stable joint velocity targets [rad/s].                  |
 | `chs_kp` / `chs_kd`  | `vector<double>` | MIT gains used while moving to the stable configuration.|
 | `chs_type`           | `string`         | Chassis type: `maver_x4` or `trigger_a`.                |
-| `chs_impedance_kp` / `kd` | `vector<double>` | Independent impedance gains `[x, y, yaw]`.         |
+| `chs_impedance_kp` / `kd` | `vector<double>` | Isotropic impedance gains `[pos, yaw]`.            |
 | `chs_pos_threshold`  | `double`         | Max XY error step applied per cycle [m].                |
 | `chs_yaw_threshold`  | `double`         | Max yaw error step applied per cycle [rad].             |
 | `chs_vel_kd`         | `vector<double>` | Joint `kd` used by VEL mode motor tracking.             |

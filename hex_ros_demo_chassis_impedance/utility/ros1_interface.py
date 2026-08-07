@@ -66,10 +66,10 @@ class DataInterface(InterfaceBase):
         self._impedance_param = {
             "chs_impedance_kp":
             list(rospy.get_param('~chs_impedance_kp',
-                                 rospy.get_param('~impedance_kp', [0.5, 0.5, 0.5]))),
+                                 rospy.get_param('~impedance_kp', [0.5, 0.5]))),
             "chs_impedance_kd":
             list(rospy.get_param('~chs_impedance_kd',
-                                 rospy.get_param('~impedance_kd', [0.0, 0.0, 0.0]))),
+                                 rospy.get_param('~impedance_kd', [0.0, 0.0]))),
             "chs_stable_pos":
             list(rospy.get_param('~chs_stable_pos', list(_ZERO8))),
             "chs_stable_vel":

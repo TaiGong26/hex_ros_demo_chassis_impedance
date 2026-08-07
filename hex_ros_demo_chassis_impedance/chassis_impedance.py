@@ -50,10 +50,10 @@ class ChassisImpedance:
             self.__impedance_param["chs_impedance_kp"], dtype=np.float64)
         self.__impedance_kd = np.asarray(
             self.__impedance_param["chs_impedance_kd"], dtype=np.float64)
-        if self.__impedance_kp.shape != (3, ) or self.__impedance_kd.shape != (
-                3, ):
+        if self.__impedance_kp.shape != (2, ) or self.__impedance_kd.shape != (
+                2, ):
             raise ValueError(
-                "chs_impedance_kp and chs_impedance_kd must be [x, y, yaw]")
+                "chs_impedance_kp and chs_impedance_kd must be [pos, yaw]")
         self.__chs_pos_threshold = float(
             self.__impedance_param["chs_pos_threshold"])
         self.__chs_yaw_threshold = float(
@@ -132,6 +132,14 @@ class ChassisImpedance:
             dtype=np.float64,
         )
 
+    @staticmethod
+    def __calc_planar_force(total_gain: float,
+                            err: np.ndarray) -> np.ndarray:
+        norm = np.linalg.norm(err)
+        if norm <= np.finfo(np.float64).eps:
+            return np.zeros(2, dtype=np.float64)
+        return float(total_gain) * np.fabs(err) / norm * err
+
     def __create_chs_dyn(self, chs_params):
         chs_type = chs_params["chs_type"]
         if chs_type == "maver_x4":
@@ -195,6 +203,8 @@ class ChassisImpedance:
                 err = np.zeros(3)
                 c, s = np.cos(cur_pose[2]), np.sin(cur_pose[2])
                 err_xy_in_world = self.__start_pose[:2] - cur_pose[:2]
+                # Rotate the world-frame equilibrium error into the current
+                # chassis body frame before applying planar impedance.
                 err[:2] = np.clip(
                     np.array(
                         [
@@ -211,7 +221,14 @@ class ChassisImpedance:
                     -self.__chs_yaw_threshold,
                     self.__chs_yaw_threshold,
                 )
-                force = self.__impedance_kp * err - self.__impedance_kd * cur_twist
+                force = np.empty(3, dtype=np.float64)
+                force[:2] = (
+                    self.__calc_planar_force(self.__impedance_kp[0],
+                                                 err[:2]) -
+                    self.__calc_planar_force(self.__impedance_kd[0],
+                                                 cur_twist[:2]))
+                force[2] = (self.__impedance_kp[1] * err[2] -
+                            self.__impedance_kd[1] * cur_twist[2])
 
                 # qdot = jac_inv @ twist; calc_jac is pinv(jac_inv), so
                 # tau = calc_jac.T @ force from virtual work.
