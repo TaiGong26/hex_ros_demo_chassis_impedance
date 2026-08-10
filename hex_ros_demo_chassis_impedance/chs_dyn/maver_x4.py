@@ -6,6 +6,7 @@ import numpy as np
 from .base import ChassisDynamicsBase
 
 _CHS_DOF = 8
+_WHEEL_IDX = [0, 2, 4, 6]
 _YAW_IDX = [1, 3, 5, 7]
 
 
@@ -44,6 +45,6 @@ class MaverX4Dynamics(ChassisDynamicsBase):
              self._chs_params["bias"])) * self._chs_params["bias_inv"]
 
         jac_inv = np.empty((_CHS_DOF, 3), dtype=np.float64)
-        jac_inv[0::2, :] = mat_yaw
-        jac_inv[1::2, :] = mat_wheel
+        jac_inv[_WHEEL_IDX, :] = mat_wheel
+        jac_inv[_YAW_IDX, :] = mat_yaw
         return jac_inv
