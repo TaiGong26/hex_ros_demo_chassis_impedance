@@ -15,7 +15,7 @@ class TriggerADynamics(ChassisDynamicsBase):
 
     def __init__(self, chs_params: dict):
         super().__init__(chs_params)
-        beta = np.array([np.pi / 3, -np.pi / 3, np.pi])
+        beta = np.array([np.pi / 3, np.pi, -np.pi / 3])
         s, c = np.sin(beta), np.cos(beta)
         self.__jac_inv = -1.0 / self._chs_params["wheel_radius"] * np.array([
             [-s[0], c[0], self._chs_params["wheel_distance"]],

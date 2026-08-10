@@ -6,7 +6,7 @@ import numpy as np
 from .base import ChassisDynamicsBase
 
 _CHS_DOF = 8
-_YAW_IDX = [0, 2, 4, 6]
+_YAW_IDX = [1, 3, 5, 7]
 
 
 class MaverX4Dynamics(ChassisDynamicsBase):
