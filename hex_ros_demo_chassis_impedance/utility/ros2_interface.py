@@ -121,8 +121,15 @@ class DataInterface(InterfaceBase):
             self.__keyboard_callback,
             10,
         )
+        self.__cmd_vel_sub = self.__node.create_subscription(
+            Twist,
+            'cmd_vel',
+            self.__cmd_vel_callback,
+            10,
+        )
         self.__chs_state_sub
         self.__keyboard_sub
+        self.__cmd_vel_sub
 
         ### spin thread
         self.__shutting_down = False
@@ -224,6 +231,24 @@ class DataInterface(InterfaceBase):
 
     def __keyboard_callback(self, msg: HexRosTeleopKeyboardStateStamped):
         self._keyboard_deque.append(self.__keyboard_msg_to_dc(msg))
+
+    def __cmd_vel_callback(self, msg: Twist):
+        self._cmd_vel_deque.append(self.__twist_msg_to_dc(msg))
+
+    @staticmethod
+    def __twist_msg_to_dc(msg: Twist) -> HexDcBaseTwist:
+        return HexDcBaseTwist(
+            linear=HexDcBaseVector3(
+                x=float(msg.linear.x),
+                y=float(msg.linear.y),
+                z=float(msg.linear.z),
+            ),
+            angular=HexDcBaseVector3(
+                x=float(msg.angular.x),
+                y=float(msg.angular.y),
+                z=float(msg.angular.z),
+            ),
+        )
 
     @staticmethod
     def __keyboard_msg_to_dc(

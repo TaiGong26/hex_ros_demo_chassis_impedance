@@ -8,7 +8,7 @@ chassis_impedance:
 
     # Isotropic SE(2) impedance gains [pos, yaw]
     chs_impedance_kp: [300.0, 100.0]
-    chs_impedance_kd: [10.0, 5.0]
+    chs_impedance_kd: [15.0, 5.0]
     chs_pos_threshold: 1.0
     chs_yaw_threshold: 1.0
 

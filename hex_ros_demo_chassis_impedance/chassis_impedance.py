@@ -58,7 +58,9 @@ class ChassisImpedance:
             self.__impedance_param["chs_pos_threshold"])
         self.__chs_yaw_threshold = float(
             self.__impedance_param["chs_yaw_threshold"])
-        self.__start_pose = np.zeros(3, dtype=np.float64)
+        # Desired planar velocity and the current equilibrium pose.
+        self.__cmd_vel = np.zeros(3, dtype=np.float64)
+        self.__anchor_pose = None
 
         self.__chs_dyn, self.__chs_dof = self.__create_chs_dyn(
             self.__data_interface.get_chs_param())
@@ -196,13 +198,33 @@ class ChassisImpedance:
 
             state = self.__data_interface.get_chs_state(latest=True)
             if state is not None:
+                cmd_vel = self.__data_interface.get_cmd_vel(latest=True)
+                if cmd_vel is not None:
+                    self.__cmd_vel = np.array(
+                        [
+                            cmd_vel.linear.x,
+                            cmd_vel.linear.y,
+                            cmd_vel.angular.z,
+                        ],
+                        dtype=np.float64,
+                    )
+
                 cur_pose = self.__pose_se2_from_odom(state.chs_state.odom)
                 cur_twist = self.__twist_body_from_odom(state.chs_state.odom)
+
+                # The first odometry sample establishes the equilibrium. Once
+                # the commanded velocity is large enough, follow the odometry
+                # so the moving chassis is no longer pulled toward the old pose.
+                if self.__anchor_pose is None:
+                    self.__anchor_pose = cur_pose.copy()
+                latch_coeff = 100.0 * np.linalg.norm(self.__cmd_vel)
+                if latch_coeff > 1.83:
+                    self.__anchor_pose = cur_pose.copy()
 
                 # body-frame SE(2) error toward the equilibrium pose
                 err = np.zeros(3)
                 c, s = np.cos(cur_pose[2]), np.sin(cur_pose[2])
-                err_xy_in_world = self.__start_pose[:2] - cur_pose[:2]
+                err_xy_in_world = self.__anchor_pose[:2] - cur_pose[:2]
                 # Rotate the world-frame equilibrium error into the current
                 # chassis body frame before applying planar impedance.
                 err[:2] = np.clip(
@@ -217,18 +239,23 @@ class ChassisImpedance:
                     self.__chs_pos_threshold,
                 )
                 err[2] = np.clip(
-                    angle_norm(self.__start_pose[2] - cur_pose[2]),
+                    angle_norm(self.__anchor_pose[2] - cur_pose[2]),
                     -self.__chs_yaw_threshold,
                     self.__chs_yaw_threshold,
                 )
+                stiffness_coeff = 1.0 - np.tanh(latch_coeff)
+                damping_coeff = 1.0 + np.tanh(latch_coeff)
                 force = np.empty(3, dtype=np.float64)
                 force[:2] = (
-                    self.__calc_planar_force(self.__impedance_kp[0],
-                                                 err[:2]) -
-                    self.__calc_planar_force(self.__impedance_kd[0],
-                                                 cur_twist[:2]))
-                force[2] = (self.__impedance_kp[1] * err[2] -
-                            self.__impedance_kd[1] * cur_twist[2])
+                    self.__calc_planar_force(
+                        self.__impedance_kp[0] * stiffness_coeff,
+                        err[:2]) -
+                    self.__calc_planar_force(
+                        self.__impedance_kd[0] * damping_coeff,
+                        cur_twist[:2] - self.__cmd_vel[:2]))
+                force[2] = (self.__impedance_kp[1] * stiffness_coeff * err[2] -
+                            self.__impedance_kd[1] * damping_coeff *
+                            (cur_twist[2] - self.__cmd_vel[2]))
 
                 # qdot = jac_inv @ twist; calc_jac is pinv(jac_inv), so
                 # tau = calc_jac.T @ force from virtual work.

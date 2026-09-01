@@ -52,6 +52,7 @@ Ensure the following software is installed:
 | ------------------------ | ----------------------------------------------- | ------------------------ |
 | `/chs_state`             | `hex_ros_msgs/HexRosRoboChsStateStamped`        | Current chassis state.   |
 | `/teleop_keyboard_state` | `hex_ros_msgs/HexRosTeleopKeyboardStateStamped` | Keyboard key states.     |
+| `/cmd_vel`               | `geometry_msgs/Twist`                           | Desired chassis velocity (planar `x`, `y`, and `yaw`). |
 
 ### Parameters
 

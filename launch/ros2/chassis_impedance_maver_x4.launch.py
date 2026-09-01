@@ -43,6 +43,7 @@ def generate_launch_description():
                 ('chs_state', 'chs_state'),
                 ('chs_ctrl', 'chs_ctrl'),
                 ('teleop_keyboard_state', 'teleop_keyboard_state'),
+                ('cmd_vel', 'cmd_vel'),
             ],
         ),
     ])

@@ -6,5 +6,6 @@
         <remap from="chs_state" to="chs_state"/>
         <remap from="teleop_keyboard_state" to="teleop_keyboard_state"/>
         <remap from="chs_ctrl" to="chs_ctrl"/>
+        <remap from="cmd_vel" to="cmd_vel"/>
     </node>
 </launch>

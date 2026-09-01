@@ -10,6 +10,7 @@ from collections import deque
 from typing import Any, Optional
 from abc import ABC, abstractmethod
 
+from hex_util_msg.dataclass.dataclass_base import HexDcBaseTwist
 from hex_util_msg.dataclass.dataclass_robo import HexDcRoboChsCtrl
 from hex_util_msg.dataclass.dataclass_robo import HexDcRoboChsStateStamped
 from hex_util_msg.dataclass.dataclass_teleop import HexDcTeleopKeyboardState
@@ -26,6 +27,7 @@ class InterfaceBase(ABC):
         ### rx msg queues
         self._chs_state_deque = deque(maxlen=100)
         self._keyboard_deque = deque(maxlen=100)
+        self._cmd_vel_deque = deque(maxlen=100)
 
         ### name
         self._name = name
@@ -122,3 +124,7 @@ class InterfaceBase(ABC):
         latest: bool = False,
     ) -> Optional[HexDcTeleopKeyboardState]:
         return self.deque_helper(self._keyboard_deque, latest)
+
+    # cmd_vel (desired chassis velocity)
+    def get_cmd_vel(self, latest: bool = False) -> Optional[HexDcBaseTwist]:
+        return self.deque_helper(self._cmd_vel_deque, latest)

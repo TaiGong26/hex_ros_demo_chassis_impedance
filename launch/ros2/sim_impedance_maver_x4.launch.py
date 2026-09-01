@@ -11,13 +11,15 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     sim_pkg_path = FindPackageShare('hex_ros_sim_maver_x4')
     keyboard_pkg_path = FindPackageShare('hex_ros_teleop_keyboard')
+    joystick_pkg_path = FindPackageShare('hex_ros_teleop_joystick')
     impedance_pkg_path = FindPackageShare('hex_ros_demo_chassis_impedance')
 
-    viewer_arg = DeclareLaunchArgument(
-        name='viewer', default_value='true', choices=['true', 'false'])
-    rviz_arg = DeclareLaunchArgument(
-        name='rviz', default_value='true', choices=['true', 'false'])
-
+    viewer_arg = DeclareLaunchArgument(name='viewer',
+                                       default_value='true',
+                                       choices=['true', 'false'])
+    rviz_arg = DeclareLaunchArgument(name='rviz',
+                                     default_value='true',
+                                     choices=['true', 'false'])
     sim_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([sim_pkg_path, 'sim_maver_x4.launch.py'])),
@@ -31,10 +33,19 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
                 [keyboard_pkg_path, 'teleop_keyboard.launch.py'])))
+    joystick_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [joystick_pkg_path, 'teleop_joystick.launch.py'])),
+        launch_arguments={
+            'use_cmd': 'true',
+            'cmd_topic': 'cmd_vel',
+        }.items(),
+    )
     impedance_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            PathJoinSubstitution([
-                impedance_pkg_path, 'chassis_impedance_maver_x4.launch.py'])),
+            PathJoinSubstitution(
+                [impedance_pkg_path, 'chassis_impedance_maver_x4.launch.py'])),
         launch_arguments={'use_sim_time': 'true'}.items())
 
     return LaunchDescription([
@@ -42,5 +53,6 @@ def generate_launch_description():
         rviz_arg,
         sim_launch,
         keyboard_launch,
+        joystick_launch,
         impedance_launch,
     ])

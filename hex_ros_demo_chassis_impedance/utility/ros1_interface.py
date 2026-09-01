@@ -125,8 +125,14 @@ class DataInterface(InterfaceBase):
             HexRosTeleopKeyboardStateStamped,
             self.__keyboard_callback,
         )
+        self.__cmd_vel_sub = rospy.Subscriber(
+            'cmd_vel',
+            Twist,
+            self.__cmd_vel_callback,
+        )
         self.__chs_state_sub
         self.__keyboard_sub
+        self.__cmd_vel_sub
 
         ### finish log
         print(f"#### DataInterface init: {self._name} ####")
@@ -206,6 +212,24 @@ class DataInterface(InterfaceBase):
 
     def __keyboard_callback(self, msg: HexRosTeleopKeyboardStateStamped):
         self._keyboard_deque.append(self.__keyboard_msg_to_dc(msg))
+
+    def __cmd_vel_callback(self, msg: Twist):
+        self._cmd_vel_deque.append(self.__twist_msg_to_dc(msg))
+
+    @staticmethod
+    def __twist_msg_to_dc(msg: Twist) -> HexDcBaseTwist:
+        return HexDcBaseTwist(
+            linear=HexDcBaseVector3(
+                x=float(msg.linear.x),
+                y=float(msg.linear.y),
+                z=float(msg.linear.z),
+            ),
+            angular=HexDcBaseVector3(
+                x=float(msg.angular.x),
+                y=float(msg.angular.y),
+                z=float(msg.angular.z),
+            ),
+        )
 
     @staticmethod
     def __keyboard_msg_to_dc(
