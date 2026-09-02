@@ -28,6 +28,8 @@ from hex_util_msg.dataclass.dataclass_robo import (
     HexDcRoboChsCtrlMode,
 )
 
+from typing import Optional
+
 # Joint order: yaw1, wheel1, yaw2, wheel2, yaw3, wheel3, yaw4, wheel4
 CHS_DOF = 8
 
@@ -135,12 +137,19 @@ class ChassisImpedance:
         )
 
     @staticmethod
-    def __calc_planar_force(total_gain: float,
-                            err: np.ndarray) -> np.ndarray:
+    def __calc_planar_force(
+        total_gain: float,
+        err: np.ndarray,
+        max_force: Optional[float] = None,
+    ) -> np.ndarray:
         norm = np.linalg.norm(err)
         if norm <= np.finfo(np.float64).eps:
             return np.zeros(2, dtype=np.float64)
-        return float(total_gain) * np.fabs(err) / norm * err
+        value = float(total_gain) * np.fabs(err)
+        if max_force is not None:
+            value = np.clip(value, 0.0, max_force)
+        direction = err / norm
+        return value * direction
 
     def __create_chs_dyn(self, chs_params):
         chs_type = chs_params["chs_type"]
@@ -218,7 +227,7 @@ class ChassisImpedance:
                 if self.__anchor_pose is None:
                     self.__anchor_pose = cur_pose.copy()
                 latch_coeff = 100.0 * np.linalg.norm(self.__cmd_vel)
-                if latch_coeff > 1.83:
+                if latch_coeff > 2.64:
                     self.__anchor_pose = cur_pose.copy()
 
                 # body-frame SE(2) error toward the equilibrium pose
@@ -244,7 +253,8 @@ class ChassisImpedance:
                     self.__chs_yaw_threshold,
                 )
                 stiffness_coeff = 1.0 - np.tanh(latch_coeff)
-                damping_coeff = 1.0 + np.tanh(latch_coeff)
+                damping_coeff = 1.0
+                # damping_coeff = 1.0 + np.tanh(latch_coeff)
                 force = np.empty(3, dtype=np.float64)
                 force[:2] = (
                     self.__calc_planar_force(
@@ -252,7 +262,9 @@ class ChassisImpedance:
                         err[:2]) -
                     self.__calc_planar_force(
                         self.__impedance_kd[0] * damping_coeff,
-                        cur_twist[:2] - self.__cmd_vel[:2]))
+                        cur_twist[:2] - self.__cmd_vel[:2],
+                        max_force=70.0,
+                    ))
                 force[2] = (self.__impedance_kp[1] * stiffness_coeff * err[2] -
                             self.__impedance_kd[1] * damping_coeff *
                             (cur_twist[2] - self.__cmd_vel[2]))

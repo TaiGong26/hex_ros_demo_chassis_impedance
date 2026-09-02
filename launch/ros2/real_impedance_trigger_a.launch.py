@@ -20,7 +20,7 @@ def generate_launch_description():
 
     chassis_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            PathJoinSubstitution([chassis_pkg_path, 'trigger_a.launch.py'])),
+            PathJoinSubstitution([chassis_pkg_path, 'trigger_a3_h1.launch.py'])),
         launch_arguments={
             'robot_host': LaunchConfiguration('robot_host'),
             'robot_port': LaunchConfiguration('robot_port'),
