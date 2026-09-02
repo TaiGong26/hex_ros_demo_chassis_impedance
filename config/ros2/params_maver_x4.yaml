@@ -7,14 +7,15 @@ chassis_impedance:
     rate_teleop: 100.0
 
     # Isotropic SE(2) impedance gains [pos, yaw]
-    chs_impedance_kp: [500.0, 150.0]
-    chs_impedance_kd: [200.0, 15.0]
-    chs_pos_threshold: 1.0
-    chs_yaw_threshold: 1.0
-
-    chs_type: "maver_x4"
+    impedance_kp: [500.0, 150.0]
+    impedance_kd: [200.0, 15.0]
+    impedance_force_limit: [50.0, 50.0]
+    impedance_torque_limit: [50.0, 50.0]
+    impedance_pos_threshold: 1.0
+    impedance_yaw_threshold: 1.0
 
     # Maver X4 chassis geometry [m]
+    chs_type: "maver_x4"
     chs_bias: 0.02
     chs_wheel_radius: 0.0625
     chs_track_width: 0.28

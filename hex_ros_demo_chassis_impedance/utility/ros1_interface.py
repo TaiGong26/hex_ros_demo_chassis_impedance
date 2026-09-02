@@ -39,9 +39,6 @@ from .interface_base import InterfaceBase
 
 _LETTERS = [chr(c) for c in range(ord('a'), ord('z') + 1)]
 
-_CHS_DOF = 8
-_ZERO8 = [0.0] * _CHS_DOF
-
 
 class DataInterface(InterfaceBase):
 
@@ -57,40 +54,19 @@ class DataInterface(InterfaceBase):
         self._rate_param.update({
             "teleop": rospy.get_param('~rate_teleop', 100.0),
         })
-        self._model_param = {
-            "urdf":
-            rospy.get_param('~model_urdf', ""),
-            "frame_id":
-            rospy.get_param('~model_frame_id', "base_link"),
-        }
         self._impedance_param = {
-            "chs_impedance_kp":
-            list(rospy.get_param('~chs_impedance_kp',
-                                 rospy.get_param('~impedance_kp', [0.5, 0.5]))),
-            "chs_impedance_kd":
-            list(rospy.get_param('~chs_impedance_kd',
-                                 rospy.get_param('~impedance_kd', [0.0, 0.0]))),
-            "chs_stable_pos":
-            list(rospy.get_param('~chs_stable_pos', list(_ZERO8))),
-            "chs_stable_vel":
-            list(rospy.get_param('~chs_stable_vel', list(_ZERO8))),
-            "chs_kp":
-            list(
-                rospy.get_param(
-                    '~chs_kp', [20.0, 0.0, 20.0, 0.0, 20.0, 0.0, 20.0, 0.0])),
-            "chs_kd":
-            list(rospy.get_param('~chs_kd', [1.0] * _CHS_DOF)),
-            "chs_pos_threshold":
-            rospy.get_param('~chs_pos_threshold', 0.2),
-            "chs_yaw_threshold":
-            rospy.get_param('~chs_yaw_threshold', 0.2),
-            "chs_vel_kd":
-            list(
-                rospy.get_param(
-                    '~chs_vel_kd',
-                    [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0])),
-            "arrive_threshold":
-            rospy.get_param('~arrive_threshold', 0.06),
+            "impedance_kp":
+            list(rospy.get_param('~impedance_kp', [0.5, 0.5])),
+            "impedance_kd":
+            list(rospy.get_param('~impedance_kd', [0.0, 0.0])),
+            "impedance_force_limit":
+            list(rospy.get_param('~impedance_force_limit', [50.0, 50.0])),
+            "impedance_torque_limit":
+            list(rospy.get_param('~impedance_torque_limit', [50.0, 50.0])),
+            "impedance_pos_threshold":
+            rospy.get_param('~impedance_pos_threshold', 0.2),
+            "impedance_yaw_threshold":
+            rospy.get_param('~impedance_yaw_threshold', 0.2),
         }
         self._chs_param = {
             "chs_type":

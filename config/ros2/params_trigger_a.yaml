@@ -7,13 +7,14 @@ chassis_impedance:
     rate_teleop: 100.0
 
     # Isotropic SE(2) impedance gains [pos, yaw]
-    chs_impedance_kp: [500.0, 150.0]
-    chs_impedance_kd: [200.0, 15.0]
-    chs_pos_threshold: 1.0
-    chs_yaw_threshold: 1.0
-
-    chs_type: "trigger_a"
+    impedance_kp: [500.0, 150.0]
+    impedance_kd: [200.0, 15.0]
+    impedance_force_limit: [50.0, 50.0]
+    impedance_torque_limit: [50.0, 50.0]
+    impedance_pos_threshold: 1.0
+    impedance_yaw_threshold: 1.0
 
     # Trigger A chassis geometry [m]
+    chs_type: "trigger_a"
     chs_wheel_radius: 0.102
     chs_wheel_distance: 0.3252

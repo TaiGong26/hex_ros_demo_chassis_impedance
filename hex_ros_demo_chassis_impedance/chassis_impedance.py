@@ -11,6 +11,7 @@ import traceback
 import threading
 
 import numpy as np
+from typing import Optional
 
 from hex_util_ros import quat2yaw
 from hex_util_ros.robot_util import angle_norm
@@ -27,8 +28,6 @@ from hex_util_msg.dataclass.dataclass_robo import (
     HexDcRoboChsCtrl,
     HexDcRoboChsCtrlMode,
 )
-
-from typing import Optional
 
 # Joint order: yaw1, wheel1, yaw2, wheel2, yaw3, wheel3, yaw4, wheel4
 CHS_DOF = 8
@@ -49,17 +48,21 @@ class ChassisImpedance:
 
         ### control presets
         self.__impedance_kp = np.asarray(
-            self.__impedance_param["chs_impedance_kp"], dtype=np.float64)
+            self.__impedance_param["impedance_kp"], dtype=np.float64)
         self.__impedance_kd = np.asarray(
-            self.__impedance_param["chs_impedance_kd"], dtype=np.float64)
+            self.__impedance_param["impedance_kd"], dtype=np.float64)
         if self.__impedance_kp.shape != (2, ) or self.__impedance_kd.shape != (
                 2, ):
             raise ValueError(
-                "chs_impedance_kp and chs_impedance_kd must be [pos, yaw]")
-        self.__chs_pos_threshold = float(
-            self.__impedance_param["chs_pos_threshold"])
-        self.__chs_yaw_threshold = float(
-            self.__impedance_param["chs_yaw_threshold"])
+                "impedance_kp and impedance_kd must be [pos, yaw]")
+        self.__pos_threshold = float(
+            self.__impedance_param["impedance_pos_threshold"])
+        self.__yaw_threshold = float(
+            self.__impedance_param["impedance_yaw_threshold"])
+        self.__force_limit = np.asarray(
+            self.__impedance_param["impedance_force_limit"], dtype=np.float64)
+        self.__torque_limit = np.asarray(
+            self.__impedance_param["impedance_torque_limit"], dtype=np.float64)
         # Desired planar velocity and the current equilibrium pose.
         self.__cmd_vel = np.zeros(3, dtype=np.float64)
         self.__anchor_pose = None
@@ -140,16 +143,27 @@ class ChassisImpedance:
     def __calc_planar_force(
         total_gain: float,
         err: np.ndarray,
-        max_force: Optional[float] = None,
+        limit: Optional[float] = None,
     ) -> np.ndarray:
         norm = np.linalg.norm(err)
         if norm <= np.finfo(np.float64).eps:
             return np.zeros(2, dtype=np.float64)
-        value = float(total_gain) * np.fabs(err)
-        if max_force is not None:
-            value = np.clip(value, 0.0, max_force)
         direction = err / norm
+        value = float(total_gain) * np.fabs(err)
+        if limit is not None:
+            return np.clip(value, 0.0, limit) * direction
         return value * direction
+
+    @staticmethod
+    def __calc_torque(
+        total_gain: float,
+        err: np.ndarray,
+        limit: Optional[float] = None,
+    ) -> float:
+        value = float(total_gain) * err
+        if limit is not None:
+            return np.clip(value, -limit, limit)
+        return value
 
     def __create_chs_dyn(self, chs_params):
         chs_type = chs_params["chs_type"]
@@ -227,7 +241,7 @@ class ChassisImpedance:
                 if self.__anchor_pose is None:
                     self.__anchor_pose = cur_pose.copy()
                 latch_coeff = 100.0 * np.linalg.norm(self.__cmd_vel)
-                if latch_coeff > 2.64:
+                if latch_coeff > 2.64:  # tanh = 0.99
                     self.__anchor_pose = cur_pose.copy()
 
                 # body-frame SE(2) error toward the equilibrium pose
@@ -244,30 +258,34 @@ class ChassisImpedance:
                         ],
                         dtype=np.float64,
                     ),
-                    -self.__chs_pos_threshold,
-                    self.__chs_pos_threshold,
+                    -self.__pos_threshold,
+                    self.__pos_threshold,
                 )
                 err[2] = np.clip(
                     angle_norm(self.__anchor_pose[2] - cur_pose[2]),
-                    -self.__chs_yaw_threshold,
-                    self.__chs_yaw_threshold,
+                    -self.__yaw_threshold,
+                    self.__yaw_threshold,
                 )
                 stiffness_coeff = 1.0 - np.tanh(latch_coeff)
                 damping_coeff = 1.0
                 # damping_coeff = 1.0 + np.tanh(latch_coeff)
                 force = np.empty(3, dtype=np.float64)
-                force[:2] = (
-                    self.__calc_planar_force(
-                        self.__impedance_kp[0] * stiffness_coeff,
-                        err[:2]) -
-                    self.__calc_planar_force(
+                force[:2] = (self.__calc_planar_force(
+                    self.__impedance_kp[0] * stiffness_coeff,
+                    err[:2],
+                    limit=self.__force_limit[0]) + self.__calc_planar_force(
                         self.__impedance_kd[0] * damping_coeff,
-                        cur_twist[:2] - self.__cmd_vel[:2],
-                        max_force=70.0,
+                        self.__cmd_vel[:2] - cur_twist[:2],
+                        limit=self.__force_limit[1],
                     ))
-                force[2] = (self.__impedance_kp[1] * stiffness_coeff * err[2] -
-                            self.__impedance_kd[1] * damping_coeff *
-                            (cur_twist[2] - self.__cmd_vel[2]))
+                force[2] = (self.__calc_torque(
+                    self.__impedance_kp[1] * stiffness_coeff,
+                    err[2],
+                    limit=self.__torque_limit[0]) + self.__calc_torque(
+                        self.__impedance_kd[1] * damping_coeff,
+                        self.__cmd_vel[2] - cur_twist[2],
+                        limit=self.__torque_limit[1],
+                    ))
 
                 # qdot = jac_inv @ twist; calc_jac is pinv(jac_inv), so
                 # tau = calc_jac.T @ force from virtual work.

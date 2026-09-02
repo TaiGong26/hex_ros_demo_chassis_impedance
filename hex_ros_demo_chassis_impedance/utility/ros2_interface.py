@@ -61,10 +61,12 @@ class DataInterface(InterfaceBase):
 
         ### parameters
         self.__node.declare_parameter('rate_teleop', 100.0)
-        self.__node.declare_parameter('chs_impedance_kp', [2.0, 2.0])
-        self.__node.declare_parameter('chs_impedance_kd', [1.0, 1.0])
-        self.__node.declare_parameter('chs_pos_threshold', 0.2)
-        self.__node.declare_parameter('chs_yaw_threshold', 0.2)
+        self.__node.declare_parameter('impedance_kp', [2.0, 2.0])
+        self.__node.declare_parameter('impedance_kd', [1.0, 1.0])
+        self.__node.declare_parameter('impedance_force_limit', [50.0, 50.0])
+        self.__node.declare_parameter('impedance_torque_limit', [50.0, 50.0])
+        self.__node.declare_parameter('impedance_pos_threshold', 0.2)
+        self.__node.declare_parameter('impedance_yaw_threshold', 0.2)
         self.__node.declare_parameter('chs_type', 'maver_x4')
         self.__node.declare_parameter('chs_bias', 0.02)
         self.__node.declare_parameter('chs_wheel_radius', 0.0625)
@@ -77,14 +79,18 @@ class DataInterface(InterfaceBase):
             self.__node.get_parameter('rate_teleop').value,
         })
         self._impedance_param = {
-            "chs_impedance_kp":
-            list(self.__node.get_parameter('chs_impedance_kp').value),
-            "chs_impedance_kd":
-            list(self.__node.get_parameter('chs_impedance_kd').value),
-            "chs_pos_threshold":
-            self.__node.get_parameter('chs_pos_threshold').value,
-            "chs_yaw_threshold":
-            self.__node.get_parameter('chs_yaw_threshold').value,
+            "impedance_kp":
+            list(self.__node.get_parameter('impedance_kp').value),
+            "impedance_kd":
+            list(self.__node.get_parameter('impedance_kd').value),
+            "impedance_force_limit":
+            list(self.__node.get_parameter('impedance_force_limit').value),
+            "impedance_torque_limit":
+            list(self.__node.get_parameter('impedance_torque_limit').value),
+            "impedance_pos_threshold":
+            self.__node.get_parameter('impedance_pos_threshold').value,
+            "impedance_yaw_threshold":
+            self.__node.get_parameter('impedance_yaw_threshold').value,
         }
         self._chs_param = {
             "chs_type":
