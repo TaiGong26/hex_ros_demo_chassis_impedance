@@ -1,12 +1,12 @@
 # impedance control work loop rate [hz]
-rate_ros: 500.0
+rate_ros: 1000.0
 
 # keyboard monitor rate [hz]
 rate_teleop: 100.0
 
 # Isotropic SE(2) impedance gains [pos, yaw]
-chs_impedance_kp: [300.0, 100.0]
-chs_impedance_kd: [20.0, 5.0]
+chs_impedance_kp: [500.0, 150.0]
+chs_impedance_kd: [200.0, 15.0]
 chs_pos_threshold: 1.0
 chs_yaw_threshold: 1.0
 
