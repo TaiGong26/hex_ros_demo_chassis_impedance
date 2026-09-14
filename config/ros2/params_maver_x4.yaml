@@ -1,4 +1,4 @@
-chassis_impedance:
+/**/chassis_impedance:
   ros__parameters:
     # impedance control work loop rate [hz]
     rate_ros: 1000.0
