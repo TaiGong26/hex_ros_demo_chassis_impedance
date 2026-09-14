@@ -1,4 +1,4 @@
-chassis_impedance:
+/**/chassis_impedance:
   ros__parameters:
     # impedance control work loop rate [hz]
     rate_ros: 1000.0
@@ -7,18 +7,18 @@ chassis_impedance:
     rate_teleop: 100.0
 
     # Isotropic SE(2) impedance gains [pos, yaw]
-    # impedance_kp: [500.0, 150.0]
-    # impedance_kd: [200.0, 15.0]
+    # impedance_kp: [200.0, 150.0]
+    # impedance_kd: [50.0, 15.0]
 
     # impedance
-    impedance_kp: [250.0, 150.0]
-    impedance_kd: [5.0, 15.0]
+    impedance_kp: [300.0, 50.0]
+    impedance_kd: [30.0, 5.0]
 
-    # impedance_kp: [200.0, 50.0]
-    # impedance_kd: [2.0, 1.0]
+    # impedance_kp: [250.0, 150.0]
+    # impedance_kd: [5.0, 15.0]
 
     impedance_force_limit: [50.0, 50.0]
-    impedance_torque_limit: [20.0, 50.0]
+    impedance_torque_limit: [50.0, 50.0]
     impedance_pos_threshold: 1.0
     impedance_yaw_threshold: 1.0
 
