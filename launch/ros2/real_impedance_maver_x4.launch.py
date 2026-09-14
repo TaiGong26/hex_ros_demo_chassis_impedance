@@ -9,6 +9,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    joystick_pkg_path = FindPackageShare('hex_ros_teleop_joystick')
     keyboard_pkg_path = FindPackageShare('hex_ros_teleop_keyboard')
     chassis_pkg_path = FindPackageShare('hex_ros_robot_chassis')
     impedance_pkg_path = FindPackageShare('hex_ros_demo_chassis_impedance')
@@ -30,6 +31,15 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
                 [keyboard_pkg_path, 'teleop_keyboard.launch.py'])))
+    joystick_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [joystick_pkg_path, 'teleop_joystick.launch.py'])),
+        launch_arguments={
+            'use_cmd': 'true',
+            'cmd_topic': 'cmd_vel',
+        }.items(),
+    )
     impedance_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
@@ -41,6 +51,7 @@ def generate_launch_description():
         robot_host_arg,
         robot_port_arg,
         keyboard_launch,
+        joystick_launch,
         chassis_launch,
         impedance_launch,
     ])
